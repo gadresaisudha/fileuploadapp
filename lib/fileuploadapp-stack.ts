@@ -10,6 +10,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaTriggers from "aws-cdk-lib/aws-lambda-event-sources";
+import * as sst from "@serverless-stack/resources";
 const REGION = "us-east-1";
 const BUCKET_NAME = 'bucket_for_file_upload';
 const crypto_1 = require("crypto");
@@ -54,21 +55,32 @@ export class FileuploadappStack extends cdk.Stack {
       initialPolicy : [LAMBDA_POLICY]
     });
    
+    //create permission for lambda 
+    const LAMBDA_PERMISSION = new lambda.CfnPermission(this, 'apiGatewayUrlGrant', {
+      functionName: `${GET_PRESIGNED_URL.functionArn}`,
+      action: 'lambda:InvokeFunction',
+      principal: 'apigateway.amazonaws.com'
+    });
+    
 
-    /*
-    //api gateway
-    const api = new RestApi(this,'file_upload_api',{
-      description : 'This is a sample api'
+    //create api gateway
+    const api = new apigateway.LambdaRestApi(this,'fileUploadApi',{
+      handler : GET_PRESIGNED_URL,
       defaultCorsPreflightOptions: {
-        allowOrigins: ApiGateway.Cors.ALL_ORIGINS,
-        allowMethods: ApiGateway.Cors.ALL_METHODS,
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: ['*'],
       }
     });
-    const mainpath = api.root.addResource("presignedUrl");
-    mainpath.addMethod("GET", new apigateway.LambdaIntegration(getPresignedUrl));
+    //get api url
+    const uploadPath = api.urlForPath();
+    
+    new cdk.CfnOutput(this, 'UploadPath', {
+      value: uploadPath,
+      exportName: 'UploadPath',
+    });
 
-    */
-
-  }
+    
+ 
+}
 }
